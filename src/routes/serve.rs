@@ -68,10 +68,17 @@ pub async fn fetch_file(
             .map_err(|_| Error::S3Error)?;
 
         if code != 200 {
-            return Err(Error::S3Error);
-        }
+            let path: PathBuf = format!("{}/{}", *LOCAL_STORAGE_PATH, id)
+                .parse()
+                .map_err(|_| Error::IOError)?;
 
-        contents = data;
+            let mut f = File::open(path.clone()).await.map_err(|_| Error::IOError)?;
+            f.read_to_end(&mut contents)
+                .await
+                .map_err(|_| Error::S3Error)?;
+        } else {
+            contents = data;
+        }
     } else {
         let path: PathBuf = format!("{}/{}", *LOCAL_STORAGE_PATH, id)
             .parse()
