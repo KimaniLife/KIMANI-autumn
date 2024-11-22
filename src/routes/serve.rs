@@ -73,6 +73,7 @@ pub async fn fetch_file(
                 .map_err(|_| Error::IOError)?;
 
             let mut f = File::open(path.clone()).await.map_err(|_| Error::IOError)?;
+
             f.read_to_end(&mut contents)
                 .await
                 .map_err(|_| Error::S3Error)?;
