@@ -19,27 +19,31 @@ pub struct Resize {
     pub width: Option<isize>,
     pub height: Option<isize>,
     pub max_side: Option<isize>,
+    pub fit: Option<String>,
+    pub dpr: Option<f32>,
 }
 
-pub fn try_resize(buf: Vec<u8>, width: u32, height: u32) -> Result<Vec<u8>, ImageError> {
+pub fn try_resize(buf: Vec<u8>, width: u32, height: u32, fit: &str) -> Result<Vec<u8>, ImageError> {
     let mut bytes: Vec<u8> = Vec::new();
     let config = Config::global();
 
     let image = ImageReader::new(Cursor::new(buf))
         .with_guessed_format()?
-        .decode()?
-        // resize_exact is about 2.5x slower,
-        //  thumb approximation doesn't have terrible quality so it's fine to stick with
-        //.resize_exact(width as u32, height as u32, image::imageops::FilterType::Gaussian)
-        .thumbnail_exact(width as u32, height as u32);
+        .decode()?;
+
+    let resized_image = match fit {
+        "cover" => image.resize_to_fill(width, height, image::imageops::FilterType::Gaussian),
+        _ => image.thumbnail_exact(width, height),
+    };
 
     match config.serve {
         ServeConfig::PNG => {
             let mut writer = Cursor::new(&mut bytes);
-            image.write_to(&mut writer, image::ImageOutputFormat::Png)?;
+            resized_image.write_to(&mut writer, image::ImageOutputFormat::Png)?;
         }
         ServeConfig::WEBP { quality } => {
-            let encoder = webp::Encoder::from_image(&image).expect("Could not create encoder.");
+            let encoder =
+                webp::Encoder::from_image(&resized_image).expect("Could not create encoder.");
             if let Some(quality) = quality {
                 bytes = encoder.encode(quality).to_vec();
             } else {
@@ -125,10 +129,18 @@ pub async fn fetch_file(
                 _ => return Ok((contents, None)),
             };
 
-            // There should be a way to do this zero-copy, but I can't be asked to figure it out right now.
+            let dpr = parameters.dpr.unwrap_or(1.0);
+            let target_width = (target_width as f32 * dpr) as u32;
+            let target_height = (target_height as f32 * dpr) as u32;
+
             let cloned = contents.clone();
             if let Ok(Ok(bytes)) = actix_web::web::block(move || {
-                try_resize(cloned, target_width as u32, target_height as u32)
+                try_resize(
+                    cloned,
+                    target_width,
+                    target_height,
+                    parameters.fit.as_deref().unwrap_or("default"),
+                )
             })
             .await
             {
