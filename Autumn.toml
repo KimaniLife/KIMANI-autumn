@@ -41,5 +41,6 @@ jpeg_quality = 80
         restrict_content_type = "Image"
         serve_if_field_present = ["object_id"]
 
+    # Events
     [tags.events]
         max_size = 200000000
