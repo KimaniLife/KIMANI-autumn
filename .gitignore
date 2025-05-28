@@ -4,5 +4,6 @@ docker-compose.yml
 files
 /data
 /adata
-.env
+.env*
+!.env.example
 tmp

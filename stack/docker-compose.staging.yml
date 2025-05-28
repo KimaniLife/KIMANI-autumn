@@ -1,0 +1,29 @@
+services:
+  # File server (autumn)
+  autumn:
+    image: ghcr.io/kimanilife/kimani-autumn:develop
+    restart: always
+    volumes:
+      - autumn_data:/files
+    networks:
+      - apps
+      - backend
+    environment:
+      AUTUMN_MONGO_DATABASE: revolt
+      AUTUMN_MONGO_URI: $AUTUMN_MONGO_URI
+      AUTUMN_S3_BUCKET_PREFIX: staging.kimanilife.com/
+      AUTUMN_S3_REGION: $AUTUMN_S3_REGION
+      AUTUMN_S3_ENDPOINT: $AUTUMN_S3_ENDPOINT
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+
+volumes:
+  autumn_data:
+
+networks:
+  apps:
+    name: kimani-apps
+    external: true
+  backend:
+    name: kimani-backend
+    external: true
