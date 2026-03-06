@@ -14,7 +14,7 @@ jpeg_quality = 80
     [tags.avatars]
         max_size = 4000000
         restrict_content_type = "Image"
-        serve_if_field_present = ["object_id", "user_id"]
+        serve_if_field_present = ["object_id", "user_id","survey_id"]
 
     # User Profile Backgrounds
     [tags.backgrounds]
